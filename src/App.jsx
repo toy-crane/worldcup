@@ -530,9 +530,10 @@ export default function PathBracketV7() {
                   {st.done && (
                     <span style={{
                       fontSize: 11.5, fontWeight: 800, flexShrink: 0,
-                      color: "#0A0A0C", background: "#3FB77E",
-                      borderRadius: 6, padding: "2px 7px", letterSpacing: "0.02em",
-                    }}>✓ 진출</span>
+                      color: C.gold, background: "rgba(242,193,78,0.14)",
+                      border: `1px solid ${C.gold}66`,
+                      borderRadius: 6, padding: "2px 8px", letterSpacing: "0.02em",
+                    }}>승</span>
                   )}
                 </div>
                 <div style={{ fontSize: 13, color: C.dim, marginTop: 3, ...nowrap, ...mono }}>
