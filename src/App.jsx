@@ -96,18 +96,22 @@ const SF_SCHED = [
 const FIN_SCHED = { kst: "7/20 (월) 04:00", city: "뉴저지" };
 
 // ═══ 경기 결과 ═══════════════════════════════════════════════
-// 16강 매치 인덱스(i>>1) → 승자 팀 코드. 경기가 끝나면 여기에 추가한다.
-const R16_RESULTS = { 0: "FRA", 1: "MAR" };
+// 16강 매치 인덱스(i>>1) → { win: 승자 코드, score: [승자 득점, 상대 득점] }.
+// 경기가 끝나면 여기에 추가한다.
+const R16_RESULTS = {
+  0: { win: "FRA", score: [1, 0] },
+  1: { win: "MAR", score: [3, 0] },
+};
 
 // 진 팀(탈락) 코드 집합
 const ELIMINATED = new Set(
-  Object.entries(R16_RESULTS).map(([m, w]) => {
+  Object.entries(R16_RESULTS).map(([m, r]) => {
     const a = SLOTS[m * 2][0], b = SLOTS[m * 2 + 1][0];
-    return w === a ? b : a;
+    return r.win === a ? b : a;
   })
 );
 // 8강 자리(매치 인덱스) → 진출한 승자 팀 코드 (없으면 null)
-const qfWinner = (m) => R16_RESULTS[m] || null;
+const qfWinner = (m) => R16_RESULTS[m]?.win || null;
 
 const C = {
   bg: "#0A0A0C", card: "#141419", faint: "#1F1F26",
@@ -120,14 +124,15 @@ function pathOpponents(i) {
   const byRank = (arr) => [...arr].sort((a, b) => T[a].r - T[b].r);
   const opp16 = SLOTS[i ^ 1];
   const sib = (i >> 1) ^ 1;
-  const sibWin = R16_RESULTS[sib];
+  const sibWin = R16_RESULTS[sib]?.win;
   const oppQF = sibWin ? [sibWin] : byRank([SLOTS[sib * 2], SLOTS[sib * 2 + 1]].flat());
   const oq = (i >> 2) ^ 1;
   const oppSF = byRank([0, 1, 2, 3].map((k) => SLOTS[oq * 4 + k]).flat());
   const half = i < 8 ? [8, 16] : [0, 8];
   const oppF = byRank(SLOTS.slice(...half).flat());
+  const r16 = R16_RESULTS[i >> 1];
   return [
-    { round: "16강", opps: opp16, fixed: opp16.length === 1, sched: R16_SCHED[i >> 1], done: R16_RESULTS[i >> 1] !== undefined },
+    { round: "16강", opps: opp16, fixed: opp16.length === 1, sched: R16_SCHED[i >> 1], done: !!r16, score: r16?.score },
     { round: "8강", opps: oppQF, fixed: !!sibWin, sched: QF_SCHED[i >> 2] },
     { round: "4강", opps: oppSF, fixed: false, sched: SF_SCHED[i >> 3] },
     { round: "결승", opps: oppF, fixed: false, sched: FIN_SCHED },
@@ -530,10 +535,11 @@ export default function PathBracketV7() {
                   {st.done && (
                     <span style={{
                       fontSize: 11.5, fontWeight: 800, flexShrink: 0,
-                      color: C.gold, background: "rgba(242,193,78,0.14)",
-                      border: `1px solid ${C.gold}66`,
+                      color: "#5FD6C7", background: "rgba(63,191,176,0.13)",
+                      border: "1px solid rgba(63,191,176,0.45)",
                       borderRadius: 6, padding: "2px 8px", letterSpacing: "0.02em",
-                    }}>승</span>
+                      ...mono,
+                    }}>승 {st.score ? `${st.score[0]}-${st.score[1]}` : ""}</span>
                   )}
                 </div>
                 <div style={{ fontSize: 13, color: C.dim, marginTop: 3, ...nowrap, ...mono }}>
