@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0A0A0C" />
+  <title>FIFA 월드컵 26 · 결선 토너먼트</title>
+  <meta name="description" content="2026 북중미 월드컵 결선 토너먼트 대진표 — 팀을 누르면 결승까지의 여정이 보입니다" />
+  <style>
+    html, body { margin: 0; padding: 0; background: #0A0A0C; }
+    #root { min-height: 100vh; min-height: 100dvh; }
+    /* 앱 래퍼가 min-height:100vh(인라인) + 상하 패딩 50px를 content-box로 계산해
+       뷰포트보다 항상 50px 길어지는 문제 보정 */
+    #root > div {
+      box-sizing: border-box;
+      min-height: 100vh !important;
+      min-height: 100dvh !important;
+    }
+    #credit {
+      position: fixed;
+      right: 14px;
+      bottom: calc(10px + env(safe-area-inset-bottom));
+      z-index: 10;
+    }
+    #credit a {
+      color: #55555E;
+      text-decoration: none;
+      font: 500 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0.08em;
+      transition: color 0.2s;
+    }
+    #credit a:hover { color: #E8C35A; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <footer id="credit">
+    <a href="https://toycrane.xyz" target="_blank" rel="noopener">by toycrane</a>
+  </footer>
+  <script src="./app.js"></script>
+</body>
+</html>
