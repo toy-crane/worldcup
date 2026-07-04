@@ -95,6 +95,20 @@ const SF_SCHED = [
 ];
 const FIN_SCHED = { kst: "7/20 (월) 04:00", city: "뉴저지" };
 
+// ═══ 경기 결과 ═══════════════════════════════════════════════
+// 16강 매치 인덱스(i>>1) → 승자 팀 코드. 경기가 끝나면 여기에 추가한다.
+const R16_RESULTS = { 0: "FRA", 1: "MAR" };
+
+// 진 팀(탈락) 코드 집합
+const ELIMINATED = new Set(
+  Object.entries(R16_RESULTS).map(([m, w]) => {
+    const a = SLOTS[m * 2][0], b = SLOTS[m * 2 + 1][0];
+    return w === a ? b : a;
+  })
+);
+// 8강 자리(매치 인덱스) → 진출한 승자 팀 코드 (없으면 null)
+const qfWinner = (m) => R16_RESULTS[m] || null;
+
 const C = {
   bg: "#0A0A0C", card: "#141419", faint: "#1F1F26",
   line: "#3A3A46", dim: "#5C5C66", bright: "#F5F5F7", gold: "#F2C14E",
@@ -106,14 +120,15 @@ function pathOpponents(i) {
   const byRank = (arr) => [...arr].sort((a, b) => T[a].r - T[b].r);
   const opp16 = SLOTS[i ^ 1];
   const sib = (i >> 1) ^ 1;
-  const oppQF = byRank([SLOTS[sib * 2], SLOTS[sib * 2 + 1]].flat());
+  const sibWin = R16_RESULTS[sib];
+  const oppQF = sibWin ? [sibWin] : byRank([SLOTS[sib * 2], SLOTS[sib * 2 + 1]].flat());
   const oq = (i >> 2) ^ 1;
   const oppSF = byRank([0, 1, 2, 3].map((k) => SLOTS[oq * 4 + k]).flat());
   const half = i < 8 ? [8, 16] : [0, 8];
   const oppF = byRank(SLOTS.slice(...half).flat());
   return [
-    { round: "16강", opps: opp16, fixed: opp16.length === 1, sched: R16_SCHED[i >> 1] },
-    { round: "8강", opps: oppQF, fixed: false, sched: QF_SCHED[i >> 2] },
+    { round: "16강", opps: opp16, fixed: opp16.length === 1, sched: R16_SCHED[i >> 1], done: R16_RESULTS[i >> 1] !== undefined },
+    { round: "8강", opps: oppQF, fixed: !!sibWin, sched: QF_SCHED[i >> 2] },
     { round: "4강", opps: oppSF, fixed: false, sched: SF_SCHED[i >> 3] },
     { round: "결승", opps: oppF, fixed: false, sched: FIN_SCHED },
   ];
@@ -156,16 +171,16 @@ function Flag({ code, w = 24, style }) {
 
 // ═══ 브래킷 팀 노드 3가지 스타일 ═════════════════════════════
 // style 0: 코드 / 1: 국기 / 2: 국기+코드
-function TeamNode({ x, y, slot, styleMode, active, isOpp, faded, onClick }) {
+function TeamNode({ x, y, slot, styleMode, active, isOpp, faded, eliminated, onClick }) {
   const dual = slot.length > 1;
   const common = {
     className: "node",
     style: {
-      cursor: "pointer",
-      opacity: faded ? 0.18 : 1,
+      cursor: eliminated ? "default" : "pointer",
+      opacity: eliminated ? 0.4 : faded ? 0.18 : 1,
       transform: active ? "scale(1.18)" : isOpp ? "scale(1.08)" : "scale(1)",
     },
-    onClick,
+    onClick: eliminated ? undefined : onClick,
   };
   const glow = (active || isOpp) && <circle cx={x} cy={y} r={58} fill="url(#glowGold)" />;
   const hit = <circle cx={x} cy={y} r={54} fill="transparent" />;
@@ -217,6 +232,10 @@ function TeamNode({ x, y, slot, styleMode, active, isOpp, faded, onClick }) {
               strokeWidth={active ? 2.5 : 1} />
           </g>
         )}
+        {eliminated && (
+          <line x1={x - fw / 2} y1={y + fh / 2} x2={x + fw / 2} y2={y - fh / 2}
+            stroke="#E5484D" strokeWidth={3} strokeLinecap="round" />
+        )}
       </g>
     );
   }
@@ -262,10 +281,12 @@ export default function PathBracketV7() {
 
   const steps = sel !== null ? pathOpponents(sel) : null;
   const selTeam = sel !== null ? SLOTS[sel][0] : null;
+  // 이미 이긴(끝난) 라운드 수 → 우승까지 남은 경기
+  const remaining = sel !== null ? 4 - steps.filter((st) => st.done).length : 4;
 
   const segs = sel !== null ? [
     { d: arcLink(D0[sel], R0 - 54, D1[sel >> 1], R1), fixed: steps[0].fixed },
-    { d: arcLink(D1[sel >> 1], R1, D2[sel >> 2], R2), fixed: false },
+    { d: arcLink(D1[sel >> 1], R1, D2[sel >> 2], R2), fixed: steps[1].fixed },
     { d: arcLink(D2[sel >> 2], R2, D3[sel >> 3], R3), fixed: false },
     { d: `M ${polar(R3, D3[sel >> 3])[0]} ${polar(R3, D3[sel >> 3])[1]} L ${CX} ${CY}`, fixed: false },
   ] : [];
@@ -323,7 +344,7 @@ export default function PathBracketV7() {
             <Flag code={selTeam} w={27} />
             <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.01em" }}>
               {T[selTeam].n} <span style={{ color: C.dim, fontWeight: 600 }}>·</span>{" "}
-              우승까지 <span style={{ color: C.gold }}>4경기</span>
+              우승까지 <span style={{ color: C.gold }}>{remaining}경기</span>
             </span>
           </span>
         )}
@@ -375,6 +396,23 @@ export default function PathBracketV7() {
           D.map((d, i) => {
             const [x, y] = polar(R, d);
             const hot = onPath(ring, i);
+            const winner = ring === 1 ? qfWinner(i) : null;
+            if (winner) {
+              const fw = 46, fh = 31;
+              return (
+                <g key={`j${ring}-${i}`}
+                  style={{ opacity: sel === null ? 1 : hot ? 1 : 0.4, transition: "opacity .35s ease" }}>
+                  <g style={{ filter: "drop-shadow(0 3px 7px rgba(0,0,0,0.5))" }}>
+                    <svg x={x - fw / 2} y={y - fh / 2} width={fw} height={fh} viewBox="0 0 150 100">
+                      <use href={`#flag-${T[winner].c}`} />
+                    </svg>
+                    <rect x={x - fw / 2} y={y - fh / 2} width={fw} height={fh} rx={5}
+                      fill="none" stroke={hot ? C.gold : "rgba(242,193,78,0.6)"}
+                      strokeWidth={hot ? 2.5 : 1.4} />
+                  </g>
+                </g>
+              );
+            }
             return (
               <circle key={`j${ring}-${i}`} cx={x} cy={y}
                 r={hot ? 6 : ring === 1 ? 5.5 : 4.5}
@@ -387,12 +425,14 @@ export default function PathBracketV7() {
 
         {SLOTS.map((slot, i) => {
           const [x, y] = polar(R0, D0[i]);
+          const out = ELIMINATED.has(slot[0]);
           return (
             <TeamNode key={`t${i}`} x={x} y={y} slot={slot} styleMode={styleMode}
               active={sel === i}
               isOpp={sel !== null && i === (sel ^ 1)}
               faded={sel !== null && sel !== i && i !== (sel ^ 1)}
-              onClick={() => setSel(sel === i ? null : i)} />
+              eliminated={out}
+              onClick={() => { if (!out) setSel(sel === i ? null : i); }} />
           );
         })}
 
@@ -486,6 +526,13 @@ export default function PathBracketV7() {
                       ))}
                       {st.opps.length > 2 && <span style={{ color: C.dim, fontWeight: 600 }}>외 {st.opps.length - 2}</span>}
                     </>
+                  )}
+                  {st.done && (
+                    <span style={{
+                      fontSize: 11.5, fontWeight: 800, flexShrink: 0,
+                      color: "#0A0A0C", background: "#3FB77E",
+                      borderRadius: 6, padding: "2px 7px", letterSpacing: "0.02em",
+                    }}>✓ 진출</span>
                   )}
                 </div>
                 <div style={{ fontSize: 13, color: C.dim, marginTop: 3, ...nowrap, ...mono }}>
