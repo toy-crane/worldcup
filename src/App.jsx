@@ -96,11 +96,11 @@ const SF_SCHED = [
 const FIN_SCHED = { kst: "7/20 (월) 04:00", city: "뉴저지" };
 
 // ═══ 경기 결과 ═══════════════════════════════════════════════
-// 16강 매치 인덱스(i>>1) → { win: 승자 코드, score: [승자 득점, 상대 득점] }.
+// 16강 매치 인덱스(i>>1) → { win: 승자 코드, score: [승자 득점, 상대 득점], goals: [득점자 문자열] }.
 // 경기가 끝나면 여기에 추가한다.
 const R16_RESULTS = {
-  0: { win: "FRA", score: [1, 0] },
-  1: { win: "MAR", score: [3, 0] },
+  0: { win: "FRA", score: [1, 0], goals: ["음바페 70' (PK)"] },
+  1: { win: "MAR", score: [3, 0], goals: ["오나히 50'·82'", "라히미 90+'"] },
 };
 
 // 진 팀(탈락) 코드 집합
@@ -132,7 +132,7 @@ function pathOpponents(i) {
   const oppF = byRank(SLOTS.slice(...half).flat());
   const r16 = R16_RESULTS[i >> 1];
   return [
-    { round: "16강", opps: opp16, fixed: opp16.length === 1, sched: R16_SCHED[i >> 1], done: !!r16, score: r16?.score },
+    { round: "16강", opps: opp16, fixed: opp16.length === 1, sched: R16_SCHED[i >> 1], done: !!r16, score: r16?.score, goals: r16?.goals },
     { round: "8강", opps: oppQF, fixed: !!sibWin, sched: QF_SCHED[i >> 2] },
     { round: "4강", opps: oppSF, fixed: false, sched: SF_SCHED[i >> 3] },
     { round: "결승", opps: oppF, fixed: false, sched: FIN_SCHED },
@@ -545,6 +545,18 @@ export default function PathBracketV7() {
                 <div style={{ fontSize: 13, color: C.dim, marginTop: 3, ...nowrap, ...mono }}>
                   {st.sched.kst} · {st.sched.city}
                 </div>
+                {st.goals && st.goals.length > 0 && (
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap",
+                    fontSize: 12.5, color: "#B8B8C2", marginTop: 5,
+                  }}>
+                    {st.goals.map((g, k) => (
+                      <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <span style={{ color: C.dim, fontSize: 11 }}>⚽</span> {g}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}
