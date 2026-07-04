@@ -428,7 +428,12 @@ export default function PathBracketV7() {
                 }}>
                   {st.fixed
                     ? <Flag code={st.opps[0]} w={34} />
-                    : st.opps.slice(0, 2).map((c) => <Flag key={c} code={c} w={31} />)}
+                    : st.opps.slice(0, 2).map((c) => (
+                      // 좁은 화면에선 컬럼 폭(375px 기기 기준 ≈73px)에
+                      // 국기 2개 + "+N" 라벨이 넘치므로 vw에 비례해 축소
+                      <Flag key={c} code={c} w={31}
+                        style={{ width: "min(31px, 6.4vw)", height: "min(21px, 4.3vw)" }} />
+                    ))}
                   {!st.fixed && st.opps.length > 2 && (
                     <span style={{ fontSize: 12.5, color: C.dim, fontWeight: 700 }}>+{st.opps.length - 2}</span>
                   )}
