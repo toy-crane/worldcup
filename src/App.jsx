@@ -101,6 +101,7 @@ const FIN_SCHED = { kst: "7/20 (월) 04:00", city: "뉴저지" };
 const R16_RESULTS = {
   0: { win: "FRA", score: [1, 0], goals: ["음바페 70' (PK)"] },
   1: { win: "MAR", score: [3, 0], goals: ["오나히 50'·82'", "라히미 90+'"] },
+  4: { win: "NOR", score: [2, 1], goals: ["홀란 80'·86'"] },
 };
 
 // 진 팀(탈락) 코드 집합
