@@ -363,6 +363,9 @@ export default function PathBracketV7() {
 
   const onPath = (r, i) => sel !== null && i === (sel >> r) && r <= reachRing;
 
+  // 팀 코드 → 바깥 진입 슬롯 인덱스(고유). 안쪽 승자 국기 클릭 시 그 팀을 선택.
+  const entryIndexOf = (code) => entryTeams.findIndex((sl) => sl[0] === code);
+
   // 링 r 의 자식 노드(childIdx) → 부모 링(r+1, childIdx>>1)까지의 경로 d.
   // 마지막 링은 중심으로. 배경 브래킷과 선택 경로가 같은 규칙을 공유한다.
   const ringPath = (r, childIdx) => {
@@ -492,9 +495,17 @@ export default function PathBracketV7() {
           const winner = ringWinner(ring.r, i);
           if (winner) {
             const fw = juncFw, fh = Math.round((fw * 2) / 3);
+            const eIdx = entryIndexOf(winner);
             return (
-              <g key={`j${ring.r}-${i}`}
-                style={{ opacity: sel === null ? 1 : hot ? 1 : 0.4, transition: "opacity .35s ease" }}>
+              <g key={`j${ring.r}-${i}`} className="node"
+                onClick={(e) => { e.stopPropagation(); setSel(sel === eIdx ? null : eIdx); }}
+                style={{
+                  cursor: "pointer",
+                  opacity: sel === null ? 1 : hot ? 1 : 0.4,
+                  transform: hot ? "scale(1.15)" : "scale(1)",
+                }}>
+                {hot && <circle cx={x} cy={y} r={fw * 0.72} fill="url(#glowGold)" />}
+                <circle cx={x} cy={y} r={fw * 0.68} fill="transparent" />
                 <g style={{ filter: "drop-shadow(0 3px 7px rgba(0,0,0,0.5))" }}>
                   <svg x={x - fw / 2} y={y - fh / 2} width={fw} height={fh} viewBox="0 0 150 100">
                     <use href={`#flag-${T[winner].c}`} />
