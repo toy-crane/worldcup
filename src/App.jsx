@@ -271,7 +271,7 @@ const MODES = {
   web: {
     // 원을 800으로 줄이고(밸런스+세로 스크롤 완화) 헤더는 1.45배 키움
     levels: 5, cx: 600, cy: 600, viewBox: "0 0 1200 1200", maxWidth: 800,
-    radii: [548, 392, 270, 178, 102], entryFw: 72, entryOffset: 38, juncFw: 52,
+    radii: [548, 392, 270, 178, 102], entryFw: 64, entryOffset: 38, juncFw: 46,
     softR: 380, champR: 92, trophy: 74, stripMax: 640, headScale: 1.45,
     rings: makeRings([548, 392, 270, 178, 102], 5),
   },
