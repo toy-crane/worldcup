@@ -455,7 +455,10 @@ export default function PathBracketV7() {
         )}
       </div>
 
-      <svg viewBox={M.viewBox} style={{ width: "100%", maxWidth: M.maxWidth }}
+      <svg viewBox={M.viewBox} style={{
+          width: "100%", maxWidth: M.maxWidth,
+          userSelect: "none", WebkitUserSelect: "none",
+        }}
         onClick={(e) => { if (e.target.tagName === "svg") setSel(null); }}>
         <defs>
           <radialGradient id="glowGold" cx="50%" cy="50%" r="50%">
@@ -543,7 +546,10 @@ export default function PathBracketV7() {
           opacity={journey && !eliminated ? 1 : 0.55}
           style={{ transition: "opacity .35s ease" }} />
         <text x={cx} y={cy + 4} textAnchor="middle" dominantBaseline="middle" fontSize={M.trophy}
-          style={{ filter: "drop-shadow(0 3px 10px rgba(0,0,0,0.6))" }}>🏆</text>
+          style={{
+            filter: "drop-shadow(0 3px 10px rgba(0,0,0,0.6))",
+            userSelect: "none", WebkitUserSelect: "none", pointerEvents: "none",
+          }}>🏆</text>
       </svg>
 
       {/* 여정 스트립 + 일정 카드 */}
