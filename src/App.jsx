@@ -96,12 +96,13 @@ const SF_SCHED = [
 const FIN_SCHED = { kst: "7/20 (월) 04:00", city: "뉴저지" };
 
 // ═══ 경기 결과 ═══════════════════════════════════════════════
-// 16강 매치 인덱스(i>>1) → { win: 승자 코드, score: [승자 득점, 상대 득점], goals: [득점자 문자열] }.
+// 16강 매치 인덱스(i>>1) → { win: 승자 코드, score: [승자 득점, 상대 득점],
+//   goals: [[팀 코드, 득점자 문자열], ...] (승자 먼저) }.
 // 경기가 끝나면 여기에 추가한다.
 const R16_RESULTS = {
-  0: { win: "FRA", score: [1, 0], goals: ["음바페 70' (PK)"] },
-  1: { win: "MAR", score: [3, 0], goals: ["오나히 50'·82'", "라히미 90+'"] },
-  4: { win: "NOR", score: [2, 1], goals: ["홀란 80'·86'"] },
+  0: { win: "FRA", score: [1, 0], goals: [["FRA", "음바페 70' (PK)"]] },
+  1: { win: "MAR", score: [3, 0], goals: [["MAR", "오나히 50'·82', 라히미 90+'"]] },
+  4: { win: "NOR", score: [2, 1], goals: [["NOR", "홀란 80'·86'"], ["BRA", "네이마르 90' (PK)"]] },
 };
 
 // 진 팀(탈락) 코드 집합
@@ -548,12 +549,15 @@ export default function PathBracketV7() {
                 </div>
                 {st.goals && st.goals.length > 0 && (
                   <div style={{
-                    display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap",
-                    fontSize: 12.5, color: "#B8B8C2", marginTop: 5,
+                    display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
+                    fontSize: 12.5, marginTop: 5,
                   }}>
-                    {st.goals.map((g, k) => (
-                      <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                        <span style={{ color: C.dim, fontSize: 11 }}>⚽</span> {g}
+                    {st.goals.map(([team, txt], k) => (
+                      <span key={k} style={{
+                        display: "inline-flex", alignItems: "center", gap: 5,
+                        color: team === selTeam ? "#B8B8C2" : C.dim,
+                      }}>
+                        <Flag code={team} w={17} /> {txt}
                       </span>
                     ))}
                   </div>
