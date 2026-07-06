@@ -346,7 +346,7 @@ export default function PathBracketV7() {
   const steps = journey ? journey.steps : null;
   const eliminated = journey ? !!journey.eliminatedRound : false;
   const wonCount = journey ? steps.filter((s) => s.won).length : 0;
-  const remaining = journey && !eliminated ? steps.filter((s) => !s.done).length : 0;
+  const remaining = journey && !eliminated ? steps.length - wonCount : 0;
   const reachRing = journey ? (eliminated ? wonCount : levels - 1) : -1;
 
   // 링 r 슬롯 i 에 표시할 진출 승자 코드(없으면 null)
@@ -362,22 +362,24 @@ export default function PathBracketV7() {
 
   const onPath = (r, i) => sel !== null && i === (sel >> r) && r <= reachRing;
 
+  // 링 r 의 자식 노드(childIdx) → 부모 링(r+1, childIdx>>1)까지의 경로 d.
+  // 마지막 링은 중심으로. 배경 브래킷과 선택 경로가 같은 규칙을 공유한다.
+  const ringPath = (r, childIdx) => {
+    const cR = r === 0 ? radii[0] - entryOffset : radii[r];
+    const cDeg = rings[r].angles[childIdx];
+    if (r < levels - 1) {
+      return arcLink(cx, cy, cDeg, cR, rings[r + 1].angles[childIdx >> 1], radii[r + 1]);
+    }
+    const [px, py] = polar(cx, cy, cR, cDeg);
+    return `M ${px} ${py} L ${cx} ${cy}`;
+  };
+
   // 선택 팀의 금색 경로(탈락 팀은 이긴 라운드까지만)
   const segs = [];
   if (journey) {
     const nSeg = eliminated ? wonCount : levels;
     for (let r = 0; r < nSeg; r++) {
-      const fixed = steps[r] ? !!steps[r].fixed : false;
-      const cR = r === 0 ? radii[0] - entryOffset : radii[r];
-      const cDeg = rings[r].angles[sel >> r];
-      let d;
-      if (r < levels - 1) {
-        d = arcLink(cx, cy, cDeg, cR, rings[r + 1].angles[sel >> (r + 1)], radii[r + 1]);
-      } else {
-        const [px, py] = polar(cx, cy, cR, cDeg);
-        d = `M ${px} ${py} L ${cx} ${cy}`;
-      }
-      segs.push({ d, fixed });
+      segs.push({ d: ringPath(r, sel >> r), fixed: steps[r] ? !!steps[r].fixed : false });
     }
   }
 
@@ -464,22 +466,11 @@ export default function PathBracketV7() {
         <circle cx={cx} cy={cy} r={M.softR} fill="url(#glowSoft)" />
 
         {/* 배경 브래킷 라인 */}
-        {rings.map((ring) => ring.angles.map((deg, i) => {
-          const cR = ring.r === 0 ? radii[0] - entryOffset : ring.radius;
-          if (ring.r < levels - 1) {
-            return (
-              <path key={`b${ring.r}-${i}`}
-                d={arcLink(cx, cy, deg, cR, rings[ring.r + 1].angles[i >> 1], radii[ring.r + 1])}
-                fill="none" stroke={C.line}
-                strokeWidth={ring.r === 0 ? 1.8 : 1.3} opacity={ring.r === 0 ? 1 : 0.75} />
-            );
-          }
-          const [px, py] = polar(cx, cy, cR, deg);
-          return (
-            <path key={`b${ring.r}-${i}`} d={`M ${px} ${py} L ${cx} ${cy}`}
-              fill="none" stroke={C.line} strokeWidth={1.3} opacity={0.75} />
-          );
-        }))}
+        {rings.map((ring) => ring.angles.map((_, i) => (
+          <path key={`b${ring.r}-${i}`} d={ringPath(ring.r, i)}
+            fill="none" stroke={C.line}
+            strokeWidth={ring.r === 0 ? 1.8 : 1.3} opacity={ring.r === 0 ? 1 : 0.75} />
+        )))}
 
         {/* 선택 경로 */}
         {segs.map((s, i) => (
