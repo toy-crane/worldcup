@@ -103,6 +103,7 @@ const R16_RESULTS = {
   0: { win: "FRA", score: [1, 0], goals: [["FRA", "음바페 70' (PK)"]] },
   1: { win: "MAR", score: [3, 0], goals: [["MAR", "오나히 50'·82', 라히미 90+'"]] },
   4: { win: "NOR", score: [2, 1], goals: [["NOR", "홀란 80'·86'"], ["BRA", "네이마르 90' (PK)"]] },
+  5: { win: "ENG", score: [3, 2], goals: [["ENG", "벨링엄 36'·38', 케인 60' (PK)"], ["MEX", "키뇨네스 42', 히메네스 69' (PK)"]] },
 };
 
 // 진 팀(탈락) 코드 집합
