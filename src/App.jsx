@@ -265,13 +265,14 @@ const MODES = {
   mobile: {
     levels: 4, cx: 500, cy: 505, viewBox: "0 44 1000 924", maxWidth: 680,
     radii: [398, 264, 176, 102], entryFw: 80, entryOffset: 54, juncFw: 46,
-    softR: 300, champR: 76, trophy: 60, stripMax: 560,
+    softR: 300, champR: 76, trophy: 60, stripMax: 560, headScale: 1,
     rings: makeRings([398, 264, 176, 102], 4),
   },
   web: {
-    levels: 5, cx: 600, cy: 600, viewBox: "0 0 1200 1200", maxWidth: 960,
+    // 원을 800으로 줄이고(밸런스+세로 스크롤 완화) 헤더는 1.45배 키움
+    levels: 5, cx: 600, cy: 600, viewBox: "0 0 1200 1200", maxWidth: 800,
     radii: [548, 392, 270, 178, 102], entryFw: 56, entryOffset: 38, juncFw: 40,
-    softR: 380, champR: 92, trophy: 74, stripMax: 640,
+    softR: 380, champR: 92, trophy: 74, stripMax: 640, headScale: 1.45,
     rings: makeRings([548, 392, 270, 178, 102], 5),
   },
 };
@@ -394,6 +395,8 @@ export default function PathBracketV7() {
     `${st.won ? "승" : "패"} ${st.myScore[0]}-${st.myScore[1]}` +
     (st.pk ? ` (PK ${st.pk[0]}-${st.pk[1]})` : st.aet ? " (연장)" : "");
 
+  const hs = M.headScale; // 헤더 글자·간격 배수 (web 1.45 / mobile 1)
+
   return (
     <div style={{
       minHeight: "100vh", background: C.bg, color: C.bright,
@@ -410,36 +413,36 @@ export default function PathBracketV7() {
       `}</style>
 
       <div style={{
-        fontSize: 11, letterSpacing: "0.35em", color: C.dim,
-        ...mono, marginBottom: 14,
+        fontSize: 11 * hs, letterSpacing: "0.35em", color: C.dim,
+        ...mono, marginBottom: 14 * hs,
       }}>FIFA WORLD CUP 26 · KNOCKOUT</div>
 
       {/* 헤더 */}
       <div style={{
-        minHeight: 48, display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center", gap: 7,
+        minHeight: 48 * hs, display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center", gap: 7 * hs,
         marginBottom: 4,
       }}>
         {!journey ? (
           <>
-            <span style={{ fontSize: 18, fontWeight: 800, color: C.bright, letterSpacing: "-0.01em" }}>
+            <span style={{ fontSize: 18 * hs, fontWeight: 800, color: C.bright, letterSpacing: "-0.01em" }}>
               다음 상대가 궁금한 팀을 눌러보세요
             </span>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 16, fontSize: 12.5, color: C.dim }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 16 * hs, fontSize: 12.5 * hs, color: C.dim }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-              <svg width="26" height="4"><line x1="0" y1="2" x2="26" y2="2" stroke={C.gold} strokeWidth="3.5" strokeLinecap="round" /></svg>
+              <svg width={26 * hs} height="4"><line x1="0" y1="2" x2={26 * hs} y2="2" stroke={C.gold} strokeWidth="3.5" strokeLinecap="round" /></svg>
               확정
             </span>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-              <svg width="26" height="4"><line x1="1" y1="2" x2="26" y2="2" stroke={C.gold} strokeWidth="3" strokeLinecap="round" strokeDasharray="1.5 6" /></svg>
+              <svg width={26 * hs} height="4"><line x1="1" y1="2" x2={26 * hs} y2="2" stroke={C.gold} strokeWidth="3" strokeLinecap="round" strokeDasharray="1.5 6" /></svg>
               예상
             </span>
           </span>
           </>
         ) : (
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
-            <Flag code={selTeam} w={27} />
-            <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.01em" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 9 * hs }}>
+            <Flag code={selTeam} w={Math.round(27 * hs)} />
+            <span style={{ fontSize: 18 * hs, fontWeight: 800, letterSpacing: "-0.01em" }}>
               {T[selTeam].n} <span style={{ color: C.dim, fontWeight: 600 }}>·</span>{" "}
               {eliminated
                 ? <span style={{ color: C.loss }}>{journey.eliminatedRound} 탈락</span>
