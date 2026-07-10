@@ -139,6 +139,11 @@ const R16_RESULTS = {
   7: { win: "SUI", score: [0, 0], pk: [4, 3] },
 };
 
+// QF_RESULTS 는 8강 매치 인덱스(j) → 결과. 참가자는 R16_RESULTS[2j]·R16_RESULTS[2j+1] 승자.
+const QF_RESULTS = {
+  0: { win: "FRA", score: [2, 0], goals: [["FRA", "음바페 60', 뎀벨레 66'"]] },
+};
+
 // 32강 결과(전 경기 종료). R32[k] = 16강 슬롯 k 로 진출한 매치. win = SLOTS[k] 승자.
 const R32 = [
   { win: "PAR", opp: "GER", score: [1, 1], pk: [4, 3], sched: { kst: "6/30 (화) 05:30", city: "보스턴" }, goals: [["PAR", "엔시소 42'"], ["GER", "하베르츠 54'"]] },
@@ -167,6 +172,10 @@ const ELIMINATED = new Set([
   ...R32.map((m) => m.opp),
   ...Object.entries(R16_RESULTS).map(([m, r]) => {
     const a = SLOTS[m * 2][0], b = SLOTS[m * 2 + 1][0];
+    return r.win === a ? b : a;
+  }),
+  ...Object.entries(QF_RESULTS).map(([m, r]) => {
+    const a = R16_RESULTS[m * 2].win, b = R16_RESULTS[m * 2 + 1].win;
     return r.win === a ? b : a;
   }),
 ]);
@@ -217,6 +226,11 @@ function steps16(k, team) {
   if (r16) {
     applyResult(base[0], r16, team);
     if (base[0].eliminated) return { steps: [base[0]], eliminatedRound: "16강" };
+    const qf = QF_RESULTS[k >> 2];
+    if (qf) {
+      applyResult(base[1], qf, team);
+      if (base[1].eliminated) return { steps: [base[0], base[1]], eliminatedRound: "8강" };
+    }
   }
   return { steps: base, eliminatedRound: null };
 }
@@ -359,9 +373,11 @@ export default function PathBracketV7() {
     if (levels === 5) {
       if (r === 1) return R32[i].win;
       if (r === 2) return R16_RESULTS[i]?.win || null;
+      if (r === 3) return QF_RESULTS[i]?.win || null;
       return null;
     }
     if (r === 1) return R16_RESULTS[i]?.win || null;
+    if (r === 2) return QF_RESULTS[i]?.win || null;
     return null;
   };
 
