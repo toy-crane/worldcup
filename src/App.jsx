@@ -142,6 +142,7 @@ const R16_RESULTS = {
 // QF_RESULTS 는 8강 매치 인덱스(j) → 결과. 참가자는 R16_RESULTS[2j]·R16_RESULTS[2j+1] 승자.
 const QF_RESULTS = {
   0: { win: "FRA", score: [2, 0], goals: [["FRA", "음바페 60', 뎀벨레 66'"]] },
+  1: { win: "ESP", score: [2, 1], goals: [["ESP", "F.루이스 30', 메리노 88'"], ["BEL", "더케텔라러 41'"]] },
 };
 
 // 32강 결과(전 경기 종료). R32[k] = 16강 슬롯 k 로 진출한 매치. win = SLOTS[k] 승자.
