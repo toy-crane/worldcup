@@ -197,14 +197,16 @@ function pathOpponents(i) {
   const sib = (i >> 1) ^ 1;
   const sibWin = R16_RESULTS[sib]?.win;
   const oppQF = sibWin ? [sibWin] : byRank([SLOTS[sib * 2], SLOTS[sib * 2 + 1]].flat());
+  const alive = (arr) => arr.filter((c) => !ELIMINATED.has(c));
   const oq = (i >> 2) ^ 1;
-  const oppSF = byRank([0, 1, 2, 3].map((k) => SLOTS[oq * 4 + k]).flat());
+  const oqWin = QF_RESULTS[oq]?.win;
+  const oppSF = oqWin ? [oqWin] : byRank(alive([0, 1, 2, 3].map((k) => SLOTS[oq * 4 + k]).flat()));
   const half = i < 8 ? [8, 16] : [0, 8];
-  const oppF = byRank(SLOTS.slice(...half).flat());
+  const oppF = byRank(alive(SLOTS.slice(...half).flat()));
   return [
     { round: "16강", opps: opp16, fixed: opp16.length === 1, sched: R16_SCHED[i >> 1] },
     { round: "8강", opps: oppQF, fixed: !!sibWin, sched: QF_SCHED[i >> 2] },
-    { round: "4강", opps: oppSF, fixed: false, sched: SF_SCHED[i >> 3] },
+    { round: "4강", opps: oppSF, fixed: !!oqWin, sched: SF_SCHED[i >> 3] },
     { round: "결승", opps: oppF, fixed: false, sched: FIN_SCHED },
   ];
 }
@@ -285,14 +287,14 @@ function makeRings(radii, levels) {
 const MODES = {
   mobile: {
     levels: 4, cx: 500, cy: 505, viewBox: "0 44 1000 924", maxWidth: 680,
-    radii: [398, 264, 176, 102], entryFw: 80, entryOffset: 54, juncFw: 46,
+    radii: [398, 264, 176, 102], aliveFw: 64, deadFw: 46, entryOffset: 54,
     softR: 300, champR: 76, trophy: 60, stripMax: 560, headScale: 1,
     rings: makeRings([398, 264, 176, 102], 4),
   },
   web: {
     // 원을 800으로 줄이고(밸런스+세로 스크롤 완화) 헤더는 1.45배 키움
     levels: 5, cx: 600, cy: 600, viewBox: "0 0 1200 1200", maxWidth: 800,
-    radii: [548, 392, 270, 178, 102], entryFw: 64, entryOffset: 38, juncFw: 46,
+    radii: [548, 392, 270, 178, 102], aliveFw: 72, deadFw: 42, entryOffset: 38,
     softR: 380, champR: 92, trophy: 74, stripMax: 640, headScale: 1.45,
     rings: makeRings([548, 392, 270, 178, 102], 5),
   },
@@ -313,28 +315,26 @@ function Flag({ code, w = 24, style }) {
 }
 
 // ═══ 브래킷 팀 노드 (직사각형 국기) ══════════════════════════
-function TeamNode({ x, y, slot, fw = 80, active, isOpp, faded, eliminated, onClick }) {
+// out(탈락)은 무채색·저투명도·중립 테두리, 생존은 컬러·금테. 사선 없음.
+function TeamNode({ x, y, code, fw = 80, active, isOpp, faded, out, onClick }) {
   const fh = Math.round((fw * 2) / 3);
   return (
     <g className="node" onClick={onClick} style={{
       cursor: "pointer",
-      opacity: eliminated ? 0.4 : faded ? 0.18 : 1,
+      opacity: faded ? (out ? 0.12 : 0.18) : active ? 1 : out ? 0.55 : 1,
       transform: active ? "scale(1.18)" : isOpp ? "scale(1.08)" : "scale(1)",
     }}>
       {(active || isOpp) && <circle cx={x} cy={y} r={fw * 0.72} fill="url(#glowGold)" />}
-      <circle cx={x} cy={y} r={fw * 0.68} fill="transparent" />
-      <g style={{ filter: "drop-shadow(0 4px 9px rgba(0,0,0,0.55))" }}>
+      <circle cx={x} cy={y} r={Math.max(fw * 0.68, 28)} fill="transparent" />
+      <g style={{ filter: `${out ? "grayscale(1) " : ""}drop-shadow(0 4px 9px rgba(0,0,0,0.55))` }}>
         <svg x={x - fw / 2} y={y - fh / 2} width={fw} height={fh} viewBox="0 0 150 100">
-          <use href={`#flag-${T[slot[0]].c}`} />
+          <use href={`#flag-${T[code].c}`} />
         </svg>
         <rect x={x - fw / 2} y={y - fh / 2} width={fw} height={fh} rx={5}
-          fill="none" stroke={active || isOpp ? C.gold : "rgba(255,255,255,0.14)"}
-          strokeWidth={active ? 2.5 : 1} />
+          fill="none"
+          stroke={active || isOpp ? C.gold : out ? "rgba(255,255,255,0.12)" : "rgba(242,193,78,0.55)"}
+          strokeWidth={active ? 2.5 : isOpp ? 2 : out ? 1 : 1.4} />
       </g>
-      {eliminated && (
-        <line x1={x - fw / 2} y1={y + fh / 2} x2={x + fw / 2} y2={y - fh / 2}
-          stroke="#E5484D" strokeWidth={fw > 64 ? 3 : 2.2} strokeLinecap="round" />
-      )}
     </g>
   );
 }
@@ -356,7 +356,7 @@ export default function PathBracketV7() {
   const [sel, setSel] = useState(null);
   const modeKey = useMode();
   const M = MODES[modeKey];
-  const { levels, cx, cy, rings, radii, entryFw, entryOffset, juncFw } = M;
+  const { levels, cx, cy, rings, radii, aliveFw, deadFw, entryOffset } = M;
 
   // 모드 전환 시 인덱스 범위(16↔32)가 달라지므로 선택 해제
   useEffect(() => { setSel(null); }, [modeKey]);
@@ -371,23 +371,21 @@ export default function PathBracketV7() {
   const remaining = journey && !eliminated ? steps.length - wonCount : 0;
   const reachRing = journey ? (eliminated ? wonCount : levels - 1) : -1;
 
-  // 링 r 슬롯 i 에 표시할 진출 승자 코드(없으면 null)
-  const ringWinner = (r, i) => {
-    if (levels === 5) {
-      if (r === 1) return R32[i].win;
-      if (r === 2) return R16_RESULTS[i]?.win || null;
-      if (r === 3) return QF_RESULTS[i]?.win || null;
-      return null;
-    }
-    if (r === 1) return R16_RESULTS[i]?.win || null;
-    if (r === 2) return QF_RESULTS[i]?.win || null;
-    return null;
-  };
+  // 팀당 국기 1개(프런티어): 이긴 수만큼 들어간 현재 슬롯 (승수, entry >> 승수)
+  // 에만 국기를 둔다. 탈락 팀은 탈락한 슬롯에 남는다. 나머지 슬롯은 점.
+  // 승수는 levels-1 로 클램프 — 우승(전승) 결과가 들어와도 결승 링에 머문다.
+  const placedAt = new Map();
+  entryTeams.forEach((_, i) => {
+    const j = buildJourney(i, levels);
+    const wins = Math.min(j.steps.filter((s) => s.won).length, levels - 1);
+    placedAt.set(`${wins}-${i >> wins}`, { team: j.team, entry: i, out: !!j.eliminatedRound });
+  });
 
   const onPath = (r, i) => sel !== null && i === (sel >> r) && r <= reachRing;
 
-  // 팀 코드 → 바깥 진입 슬롯 인덱스(고유). 안쪽 승자 국기 클릭 시 그 팀을 선택.
-  const entryIndexOf = (code) => entryTeams.findIndex((sl) => sl[0] === code);
+  // 선택 팀의 다음 확정 상대(있으면 그 국기에 글로우)
+  const nextStep = journey && !eliminated ? steps[wonCount] : null;
+  const nextOpp = nextStep && nextStep.fixed ? nextStep.opps[0] : null;
 
   // 링 r 의 자식 노드(childIdx) → 부모 링(r+1, childIdx>>1)까지의 경로 d.
   // 마지막 링은 중심으로. 배경 브래킷과 선택 경로가 같은 규칙을 공유한다.
@@ -463,6 +461,12 @@ export default function PathBracketV7() {
               <svg width={26 * hs} height="4"><line x1="1" y1="2" x2={26 * hs} y2="2" stroke={C.gold} strokeWidth="3" strokeLinecap="round" strokeDasharray="1.5 6" /></svg>
               예상
             </span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+              <svg width={17 * hs} height={11 * hs}>
+                <rect width={17 * hs} height={11 * hs} rx="2.5" fill="#83838C" opacity="0.5" />
+              </svg>
+              탈락
+            </span>
           </span>
           </>
         ) : (
@@ -514,56 +518,39 @@ export default function PathBracketV7() {
             style={{ filter: `drop-shadow(0 0 5px ${C.gold}55)` }} />
         ))}
 
-        {/* 정션 노드(r>=1): 진출 승자 국기 or 점 */}
-        {rings.slice(1).map((ring) => ring.angles.map((deg, i) => {
-          const [x, y] = polar(cx, cy, ring.radius, deg);
+        {/* 전 링 노드: 프런티어 슬롯엔 국기, 빈 슬롯엔 점 */}
+        {rings.map((ring) => ring.angles.map((deg, i) => {
           const hot = onPath(ring.r, i);
-          const winner = ringWinner(ring.r, i);
-          if (winner) {
-            const fw = juncFw, fh = Math.round((fw * 2) / 3);
-            const eIdx = entryIndexOf(winner);
+          const p = placedAt.get(`${ring.r}-${i}`);
+          if (p) {
+            const [x, y] = polar(cx, cy, ring.radius, deg);
             return (
-              <g key={`j${ring.r}-${i}`} className="node"
-                onClick={(e) => { e.stopPropagation(); setSel(sel === eIdx ? null : eIdx); }}
-                style={{
-                  cursor: "pointer",
-                  opacity: sel === null ? 1 : hot ? 1 : 0.4,
-                  transform: hot ? "scale(1.15)" : "scale(1)",
-                }}>
-                {hot && <circle cx={x} cy={y} r={fw * 0.72} fill="url(#glowGold)" />}
-                <circle cx={x} cy={y} r={fw * 0.68} fill="transparent" />
-                <g style={{ filter: "drop-shadow(0 3px 7px rgba(0,0,0,0.5))" }}>
-                  <svg x={x - fw / 2} y={y - fh / 2} width={fw} height={fh} viewBox="0 0 150 100">
-                    <use href={`#flag-${T[winner].c}`} />
-                  </svg>
-                  <rect x={x - fw / 2} y={y - fh / 2} width={fw} height={fh} rx={5}
-                    fill="none" stroke={hot ? C.gold : "rgba(242,193,78,0.6)"}
-                    strokeWidth={hot ? 2.5 : 1.4} />
-                </g>
-              </g>
+              <TeamNode key={`n${ring.r}-${i}`} x={x} y={y} code={p.team}
+                fw={p.out ? deadFw : aliveFw} out={p.out}
+                active={sel === p.entry}
+                isOpp={sel !== null && p.team === nextOpp}
+                faded={sel !== null && sel !== p.entry && p.team !== nextOpp && !hot}
+                onClick={(e) => { e.stopPropagation(); setSel(sel === p.entry ? null : p.entry); }} />
             );
           }
+          // 진출로 비워진 바깥 슬롯 점은 브래킷 선 시작점에 두고, 탭으로 팀 선택 가능
+          const dotR = ring.r === 0 ? radii[0] - entryOffset : ring.radius;
+          const [x, y] = polar(cx, cy, dotR, deg);
           return (
-            <circle key={`j${ring.r}-${i}`} cx={x} cy={y}
-              r={hot ? 6 : ring.r === 1 ? 5.5 : 4.5}
-              fill={hot ? C.gold : C.line}
-              opacity={sel === null ? 0.95 : hot ? 1 : 0.3}
-              style={{ transition: "opacity .35s ease" }} />
+            <g key={`n${ring.r}-${i}`}
+              onClick={ring.r === 0
+                ? (e) => { e.stopPropagation(); setSel(sel === i ? null : i); }
+                : undefined}
+              style={ring.r === 0 ? { cursor: "pointer" } : undefined}>
+              {ring.r === 0 && <circle cx={x} cy={y} r={16} fill="transparent" />}
+              <circle cx={x} cy={y}
+                r={hot ? 6 : ring.r <= 1 ? 5 : 4.5}
+                fill={hot ? C.gold : C.line}
+                opacity={sel === null ? 0.95 : hot ? 1 : 0.3}
+                style={{ transition: "opacity .35s ease" }} />
+            </g>
           );
         }))}
-
-        {/* 바깥 팀 노드 */}
-        {entryTeams.map((slot, i) => {
-          const [x, y] = polar(cx, cy, radii[0], rings[0].angles[i]);
-          return (
-            <TeamNode key={`t${i}`} x={x} y={y} slot={slot} fw={entryFw}
-              active={sel === i}
-              isOpp={sel !== null && i === (sel ^ 1)}
-              faded={sel !== null && sel !== i && i !== (sel ^ 1)}
-              eliminated={ELIMINATED.has(slot[0])}
-              onClick={() => setSel(sel === i ? null : i)} />
-          );
-        })}
 
         <circle cx={cx} cy={cy} r={M.champR} fill="url(#glowGold)"
           opacity={journey && !eliminated ? 1 : 0.55}
