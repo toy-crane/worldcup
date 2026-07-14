@@ -147,6 +147,11 @@ const QF_RESULTS = {
   3: { win: "ARG", score: [3, 1], aet: true, goals: [["ARG", "맥알리스터 10', J.알바레스 112', L.마르티네스 120+1'"], ["SUI", "은도예 67'"]] },
 };
 
+// SF_RESULTS 는 4강 매치 인덱스(i) → 결과. 참가자는 QF_RESULTS[2i]·QF_RESULTS[2i+1] 승자.
+const SF_RESULTS = {
+  0: { win: "ESP", score: [2, 0], goals: [["ESP", "오야르사발 22' (PK), 포로 58'"]] },
+};
+
 // 32강 결과(전 경기 종료). R32[k] = 16강 슬롯 k 로 진출한 매치. win = SLOTS[k] 승자.
 const R32 = [
   { win: "PAR", opp: "GER", score: [1, 1], pk: [4, 3], sched: { kst: "6/30 (화) 05:30", city: "보스턴" }, goals: [["PAR", "엔시소 42'"], ["GER", "하베르츠 54'"]] },
@@ -181,6 +186,10 @@ const ELIMINATED = new Set([
     const a = R16_RESULTS[m * 2].win, b = R16_RESULTS[m * 2 + 1].win;
     return r.win === a ? b : a;
   }),
+  ...Object.entries(SF_RESULTS).map(([m, r]) => {
+    const a = QF_RESULTS[m * 2].win, b = QF_RESULTS[m * 2 + 1].win;
+    return r.win === a ? b : a;
+  }),
 ]);
 
 const C = {
@@ -202,12 +211,14 @@ function pathOpponents(i) {
   const oqWin = QF_RESULTS[oq]?.win;
   const oppSF = oqWin ? [oqWin] : byRank(alive([0, 1, 2, 3].map((k) => SLOTS[oq * 4 + k]).flat()));
   const half = i < 8 ? [8, 16] : [0, 8];
-  const oppF = byRank(alive(SLOTS.slice(...half).flat()));
+  const os = (i >> 3) ^ 1;
+  const osWin = SF_RESULTS[os]?.win;
+  const oppF = osWin ? [osWin] : byRank(alive(SLOTS.slice(...half).flat()));
   return [
     { round: "16강", opps: opp16, fixed: opp16.length === 1, sched: R16_SCHED[i >> 1] },
     { round: "8강", opps: oppQF, fixed: !!sibWin, sched: QF_SCHED[i >> 2] },
     { round: "4강", opps: oppSF, fixed: !!oqWin, sched: SF_SCHED[i >> 3] },
-    { round: "결승", opps: oppF, fixed: false, sched: FIN_SCHED },
+    { round: "결승", opps: oppF, fixed: !!osWin, sched: FIN_SCHED },
   ];
 }
 
@@ -235,6 +246,11 @@ function steps16(k, team) {
     if (qf) {
       applyResult(base[1], qf, team);
       if (base[1].eliminated) return { steps: [base[0], base[1]], eliminatedRound: "8강" };
+      const sf = SF_RESULTS[k >> 3];
+      if (sf) {
+        applyResult(base[2], sf, team);
+        if (base[2].eliminated) return { steps: [base[0], base[1], base[2]], eliminatedRound: "4강" };
+      }
     }
   }
   return { steps: base, eliminatedRound: null };
