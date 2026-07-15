@@ -150,6 +150,7 @@ const QF_RESULTS = {
 // SF_RESULTS 는 4강 매치 인덱스(i) → 결과. 참가자는 QF_RESULTS[2i]·QF_RESULTS[2i+1] 승자.
 const SF_RESULTS = {
   0: { win: "ESP", score: [2, 0], goals: [["ESP", "오야르사발 22' (PK), 포로 58'"]] },
+  1: { win: "ARG", score: [2, 1], goals: [["ARG", "E.페르난데스 85', L.마르티네스 90+2'"], ["ENG", "고든 55'"]] },
 };
 
 // 32강 결과(전 경기 종료). R32[k] = 16강 슬롯 k 로 진출한 매치. win = SLOTS[k] 승자.
