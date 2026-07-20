@@ -153,6 +153,9 @@ const SF_RESULTS = {
   1: { win: "ARG", score: [2, 1], goals: [["ARG", "E.페르난데스 85', L.마르티네스 90+2'"], ["ENG", "고든 55'"]] },
 };
 
+// FINAL_RESULT 는 결승 결과(단일 매치, 없으면 null). 참가자는 SF_RESULTS[0]·SF_RESULTS[1] 승자.
+const FINAL_RESULT = { win: "ESP", score: [1, 0], aet: true, goals: [["ESP", "토레스 106'"]] };
+
 // 32강 결과(전 경기 종료). R32[k] = 16강 슬롯 k 로 진출한 매치. win = SLOTS[k] 승자.
 const R32 = [
   { win: "PAR", opp: "GER", score: [1, 1], pk: [4, 3], sched: { kst: "6/30 (화) 05:30", city: "보스턴" }, goals: [["PAR", "엔시소 42'"], ["GER", "하베르츠 54'"]] },
@@ -191,6 +194,7 @@ const ELIMINATED = new Set([
     const a = QF_RESULTS[m * 2].win, b = QF_RESULTS[m * 2 + 1].win;
     return r.win === a ? b : a;
   }),
+  ...(FINAL_RESULT ? [[SF_RESULTS[0].win, SF_RESULTS[1].win].find((c) => c !== FINAL_RESULT.win)] : []),
 ]);
 
 const C = {
@@ -251,6 +255,10 @@ function steps16(k, team) {
       if (sf) {
         applyResult(base[2], sf, team);
         if (base[2].eliminated) return { steps: [base[0], base[1], base[2]], eliminatedRound: "4강" };
+        if (FINAL_RESULT) {
+          applyResult(base[3], FINAL_RESULT, team);
+          if (base[3].eliminated) return { steps: base, eliminatedRound: "결승" };
+        }
       }
     }
   }
@@ -493,6 +501,8 @@ export default function PathBracketV7() {
               {T[selTeam].n} <span style={{ color: C.dim, fontWeight: 600 }}>·</span>{" "}
               {eliminated
                 ? <span style={{ color: C.loss }}>{journey.eliminatedRound} 탈락</span>
+                : remaining === 0
+                ? <span style={{ color: C.gold }}>🏆 우승</span>
                 : <>우승까지 <span style={{ color: C.gold }}>{remaining}경기</span></>}
             </span>
           </span>
